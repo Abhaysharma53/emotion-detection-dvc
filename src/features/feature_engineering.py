@@ -4,7 +4,7 @@ import os
 import yaml
 import logging
 
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 logger = logging.getLogger('Feature Engineering')
 logger.setLevel('DEBUG')
@@ -65,7 +65,7 @@ def load_data(data_path: str) -> tuple:
 
 def apply_count_vectorizer(train_df: pd.DataFrame, test_df: pd.DataFrame, max_feature: int) -> tuple:
     try:
-        vectorizer = CountVectorizer(max_features=max_feature)
+        vectorizer = TfidfVectorizer(max_features=max_feature)
         X_train = train_df['content'].values
         Y_train = train_df['sentiment'].values
 
