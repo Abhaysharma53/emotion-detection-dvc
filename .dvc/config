@@ -1,4 +1,6 @@
 [core]
-    remote = myremote2
+    remote = remote-dvc
 ['remote "myremote2"']
     url = C:\Users\admin\AppData\Local\Temp\dvc-temp2
+['remote "remote-dvc"']
+    url = s3://abhayxemotiondetection
