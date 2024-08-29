@@ -5,6 +5,9 @@ import pickle
 import json
 import logging
 
+from dvclive import Live
+import yaml
+
 from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score
 
 logger = logging.getLogger('Model Evaluation')
@@ -22,6 +25,24 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+
+def load_params(url: str) -> dict:
+    try:
+        with open(url, 'r') as file:
+            params = yaml.safe_load(file)
+        return params
+    except FileNotFoundError:
+        logger.error(f"Error: The file {url} was not found.")
+        raise
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing YAML file: {e}")
+        raise
+    except KeyError:
+        logger.error("Error: 'model_building', 'n_estimators', or 'learning_rate' key not found in params.")
+        raise
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while loading parameters: {e}")
+        raise
 
 def load_model(url: str):
     try:
@@ -55,14 +76,25 @@ def load_data(datapath: str) -> pd.DataFrame:
         logger.error(f"An unexpected error occurred while loading data: {e}")
         raise
 
-def evaluate_model(clf, X_test: pd.DataFrame, Y_test: pd.DataFrame) -> dict:
+def evaluate_model(clf, X_test: pd.DataFrame, Y_test: pd.DataFrame) -> dict:  #evaluate & experiemnt tracking
     try:
         Y_pred = clf.predict(X_test)
         Y_pred_proba = clf.predict_proba(X_test)[:, 1]
+        params = load_params('params.yaml')
         accuracy = accuracy_score(Y_test, Y_pred)
         precision = precision_score(Y_test, Y_pred)
         recall = recall_score(Y_test, Y_pred)
         auc = roc_auc_score(Y_test, Y_pred_proba)
+        with Live(save_dvc_exp = True) as live:
+            live.log_metric('accuracy', accuracy)
+            live.log_metric('precision', precision)
+            live.log_metric('recall', recall)
+            live.log_metric('roc -auc score', auc)
+
+            for param, value in params.items():
+                for key, val in value.items():
+                  live.log_param(f'{param}_{key}', val)  
+
         metrics_dict = {
             'accuracy': accuracy,
             'precision': precision,
